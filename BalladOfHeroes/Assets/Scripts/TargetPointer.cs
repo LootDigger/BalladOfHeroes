@@ -1,14 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TargetPointer : MonoBehaviour
 {
 
     #region Private fields
 
+    private float spriteWidth ;
+    private float spriteHeight ;
+    private float angle;
+    private float inversRotationValue;
 
     #endregion
+
 
 
     #region Serializable fields
@@ -26,10 +32,24 @@ public class TargetPointer : MonoBehaviour
     #endregion
 
 
+    #region Properties
+
+    public bool isTargetBehind { get; set; }
+    public bool isTargetVisible { get; set; }
+
+
+    #endregion
+
     #region Unity lifecycle
 
     void Awake()
     {
+        isTargetBehind = false;
+        isTargetVisible = false;
+        Image image = pointerScreenTransform.GetComponent<Image>();
+        spriteHeight = image.sprite.texture.height;
+        spriteWidth = image.sprite.texture.width;
+        inversRotationValue = 0f;
     }
 
 
@@ -37,43 +57,48 @@ public class TargetPointer : MonoBehaviour
 
     void LateUpdate()
     {
-        Vector3 screenPos = mainCamera.WorldToScreenPoint(targetTransform.position);
+        Vector3 screenPos = mainCamera.WorldToScreenPoint(targetTransform.position);        
         Rect rect = new Rect(0, 0, Screen.width, Screen.height);
-
         Vector3 tmpScreenPos = screenPos;
 
-        if (rect.Contains(screenPos) && !isTargetBehind())
+
+
+        if (rect.Contains(screenPos) && !IsTargetBehind())
         {
-            pointerScreenTransform.position = screenPos;
+
+            pointerScreenTransform.position = tmpScreenPos;
+            inversRotationValue = 1f;
+            isTargetVisible = true;
         }
         else
         {
-            if(isTargetBehind())
+            if (IsTargetBehind())
             {
-               if (mainCamera.transform.position.y > targetTransform.position.y)
-                {
-                    tmpScreenPos = new Vector3(screenPos.x, 0, 0);
-                    Debug.Log("Камера выше");
-                }
                
-               if (mainCamera.transform.position.y < targetTransform.position.y)
-                {
-                    tmpScreenPos = new Vector3(screenPos.x, Screen.height, 0);
-                    Debug.Log("Камера ниже");
-
-                }
-                       
-
+                tmpScreenPos = new Vector3((Screen.width - screenPos.x), 0, 0);
             }
 
+            else 
+                if(!rect.Contains(screenPos))
+            {
+                isTargetVisible = false;
 
+            }
+            
 
         }
+        float sizeX = spriteWidth / 2;
+        float sizeY = spriteHeight / 2;
 
-
+        tmpScreenPos.x = Mathf.Clamp(tmpScreenPos.x, sizeX, Screen.width - sizeX);
+        tmpScreenPos.y = Mathf.Clamp(tmpScreenPos.y, sizeY, Screen.height - sizeY);
 
         pointerScreenTransform.position = tmpScreenPos;
 
+        CalculateAngle(screenPos, tmpScreenPos);
+
+        pointerScreenTransform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        IsTargetForward();
     }
 
 
@@ -82,7 +107,7 @@ public class TargetPointer : MonoBehaviour
 
     #region Private methods
 
-    bool isTargetBehind()
+    bool IsTargetBehind()
     {
         Vector3 playerDirection = mainCamera.transform.TransformDirection(Vector3.forward);
         Vector3 vectorBetweenPlayerAndTarget = targetTransform.position - mainCamera.transform.position;
@@ -90,10 +115,10 @@ public class TargetPointer : MonoBehaviour
 
         if(Vector3.Dot(playerDirection,vectorBetweenPlayerAndTarget) < 0)
         {
-            Debug.Log("Target is behind");
+            isTargetBehind = true;
             return true;
-
-        }      
+        }
+        isTargetBehind = false;
         return false;
 
         
@@ -102,20 +127,52 @@ public class TargetPointer : MonoBehaviour
     }
 
 
-    void CheckDotProduct()
+
+    bool IsTargetForward()
     {
         Vector3 playerDirection = mainCamera.transform.TransformDirection(Vector3.forward);
         Vector3 vectorBetweenPlayerAndTarget = targetTransform.position - mainCamera.transform.position;
         playerDirection.Normalize();
         vectorBetweenPlayerAndTarget.Normalize();
-         Debug.Log(Vector3.Dot(playerDirection, vectorBetweenPlayerAndTarget    ));
 
-
-    
-       
+        //if (Vector3.Dot(playerDirection, vectorBetweenPlayerAndTarget) < 0)
+        //{
+        //    isTargetBehind = true;
+        //    return true;
+        //}
+        //isTargetBehind = false;
+        return false;
+        
     }
 
 
+    void CalculateAngle(Vector3 screenPos, Vector3 tmpScreenPos)
+    {
+        Vector3 rotationDirection = screenPos - tmpScreenPos;
+        rotationDirection.Normalize();
+        angle = Mathf.Atan2(rotationDirection.x, rotationDirection.y);
+        angle *= Mathf.Rad2Deg;
+
+        if (isTargetBehind)
+        {
+            angle += 180;
+            Debug.Log(" angle -= 180");
+        }
+
+        if (isTargetVisible)
+        {
+            angle += 180;
+            Debug.Log("Target is visible");
+        }
+        else
+        {
+            angle *= -1;
+            Debug.Log(" angle *= -1");
+        }
+
+        angle += 180f;
+    }
+  
     #endregion
 
 
