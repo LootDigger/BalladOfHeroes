@@ -30,9 +30,6 @@ public class TargetPointer : MonoBehaviour
 
     void Awake()
     {
-
-
-
     }
 
 
@@ -42,7 +39,10 @@ public class TargetPointer : MonoBehaviour
     {
         Vector3 screenPos = mainCamera.WorldToScreenPoint(targetTransform.position);
         Rect rect = new Rect(0, 0, Screen.width, Screen.height);
-        if (rect.Contains(screenPos))
+
+        Vector3 tmpScreenPos = screenPos;
+
+        if (rect.Contains(screenPos) && !isTargetBehind())
         {
             pointerScreenTransform.position = screenPos;
         }
@@ -50,8 +50,19 @@ public class TargetPointer : MonoBehaviour
         {
             if(isTargetBehind())
             {
-                
-                pointerScreenTransform.position = new Vector3( mainCamera.transform.position.x, 0, 0);
+               if (mainCamera.transform.position.y > targetTransform.position.y)
+                {
+                    tmpScreenPos = new Vector3(screenPos.x, 0, 0);
+                    Debug.Log("Камера выше");
+                }
+               
+               if (mainCamera.transform.position.y < targetTransform.position.y)
+                {
+                    tmpScreenPos = new Vector3(screenPos.x, Screen.height, 0);
+                    Debug.Log("Камера ниже");
+
+                }
+                       
 
             }
 
@@ -61,9 +72,7 @@ public class TargetPointer : MonoBehaviour
 
 
 
-
-        // isTargetBehind();
-        CheckDotProduct();
+        pointerScreenTransform.position = tmpScreenPos;
 
     }
 
@@ -77,20 +86,17 @@ public class TargetPointer : MonoBehaviour
     {
         Vector3 playerDirection = mainCamera.transform.TransformDirection(Vector3.forward);
         Vector3 vectorBetweenPlayerAndTarget = targetTransform.position - mainCamera.transform.position;
+                
 
-        
-
-        if(Vector3.Dot(vectorBetweenPlayerAndTarget,playerDirection) < 0)
+        if(Vector3.Dot(playerDirection,vectorBetweenPlayerAndTarget) < 0)
         {
             Debug.Log("Target is behind");
             return true;
 
-        }
-        else
-        {
-            return false;
+        }      
+        return false;
 
-        }
+        
 
         
     }
@@ -102,9 +108,10 @@ public class TargetPointer : MonoBehaviour
         Vector3 vectorBetweenPlayerAndTarget = targetTransform.position - mainCamera.transform.position;
         playerDirection.Normalize();
         vectorBetweenPlayerAndTarget.Normalize();
-       // Debug.Log(Vector3.Dot(vectorBetweenPlayerAndTarget, playerDirection));
+         Debug.Log(Vector3.Dot(playerDirection, vectorBetweenPlayerAndTarget    ));
 
-        Debug.Log("Angle between vectors" + Vector3.Angle(playerDirection, vectorBetweenPlayerAndTarget));
+
+    
        
     }
 
