@@ -173,18 +173,11 @@ public class TargetPointer : MonoBehaviour
         if (isTargetBehind)
         {
             angle += 180;
-            Debug.Log(" angle += 180");
         }
 
-        if (isTargetVisible)
+        if (!isTargetVisible)        
         {
-           
-            Debug.Log("Target is visible");
-        }
-        else
-        {
-            angle *= -1;
-            Debug.Log(" angle *= -1");
+            angle = 360 - angle;
         }
 
             
