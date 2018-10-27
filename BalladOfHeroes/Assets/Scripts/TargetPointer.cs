@@ -13,6 +13,11 @@ public class TargetPointer : MonoBehaviour
     private float angle;
     private float inversRotationValue;
 
+    private Vector3 pointerLeftRotation;
+    private Vector3 pointerRightRotation;
+    private Vector3 pointerUpRotation;
+
+
     #endregion
 
 
@@ -28,6 +33,11 @@ public class TargetPointer : MonoBehaviour
     [SerializeField]
     private RectTransform pointerScreenTransform;
 
+    [SerializeField]
+    private Sprite arrow;
+
+    [SerializeField]
+    private Sprite pointer;
 
     #endregion
 
@@ -44,6 +54,10 @@ public class TargetPointer : MonoBehaviour
 
     void Awake()
     {
+          pointerLeftRotation = new Vector3(0,0,-90f);
+          pointerRightRotation = new Vector3(0, 0, 90f);
+          pointerUpRotation = new Vector3(0, 0, 180f); ;
+
         isTargetBehind = false;
         isTargetVisible = false;
         Image image = pointerScreenTransform.GetComponent<Image>();
@@ -65,13 +79,16 @@ public class TargetPointer : MonoBehaviour
 
         if (rect.Contains(screenPos) && !IsTargetBehind())
         {
-
+            ChangeSprite(pointer);
             pointerScreenTransform.position = tmpScreenPos;
             inversRotationValue = 1f;
             isTargetVisible = true;
+
         }
         else
         {
+            ChangeSprite(arrow);
+
             if (IsTargetBehind())
             {
                
@@ -91,7 +108,7 @@ public class TargetPointer : MonoBehaviour
         float sizeY = spriteHeight / 2;
 
         tmpScreenPos.x = Mathf.Clamp(tmpScreenPos.x, sizeX, Screen.width - sizeX);
-        tmpScreenPos.y = Mathf.Clamp(tmpScreenPos.y, sizeY, Screen.height - sizeY);
+        tmpScreenPos.y = Mathf.Clamp(tmpScreenPos.y, sizeY  , Screen.height - sizeY);
 
         pointerScreenTransform.position = tmpScreenPos;
 
@@ -156,12 +173,12 @@ public class TargetPointer : MonoBehaviour
         if (isTargetBehind)
         {
             angle += 180;
-            Debug.Log(" angle -= 180");
+            Debug.Log(" angle += 180");
         }
 
         if (isTargetVisible)
         {
-            angle += 180;
+           
             Debug.Log("Target is visible");
         }
         else
@@ -170,9 +187,19 @@ public class TargetPointer : MonoBehaviour
             Debug.Log(" angle *= -1");
         }
 
-        angle += 180f;
+            
     }
   
+    void ChangeSprite(Sprite sprite )
+    {
+        Image im = pointerScreenTransform.GetComponent<Image>();
+
+        if(im.sprite != sprite)
+        im.sprite = sprite;
+
+    }
+
+
     #endregion
 
 
