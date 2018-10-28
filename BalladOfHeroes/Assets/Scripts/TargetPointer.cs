@@ -52,12 +52,13 @@ public class TargetPointer : MonoBehaviour
     void Awake()
     {
         CalculateArrowBoundary();
-        yPointerOffset = 0.5f;
+        yPointerOffset = 1;
         isTargetBehind = false;
         isTargetVisible = false;
         Image image = pointerScreenTransform.GetComponent<Image>();
         spriteHeight = image.sprite.texture.height;
         spriteWidth = image.sprite.texture.width;
+        rect = new Rect(0, 0, Screen.width, Screen.height);
     }
 
 
@@ -67,12 +68,7 @@ public class TargetPointer : MonoBehaviour
     {
         Vector3 targetPos = targetTransform.position;
         targetPos += new Vector3(0, yPointerOffset, 0);
-
-        Debug.Log(targetPos);
-
-
-        Vector3 screenPos = mainCamera.WorldToScreenPoint(targetPos);        
-        rect = new Rect(0, 0, Screen.width, Screen.height);
+        Vector3 screenPos = mainCamera.WorldToScreenPoint(targetPos);          
         Vector3 tmpScreenPos = screenPos;
         
 
@@ -84,37 +80,31 @@ public class TargetPointer : MonoBehaviour
         }
         else
         {
-
             ChangeSprite(arrow);
 
             if (IsTargetBehind())
             {
-                isTargetBehind = true;
+                if (mainCamera.transform.position.y > targetPos.y)
+                    tmpScreenPos = new Vector3((Screen.width - screenPos.x),0, 0);
 
-                
-                tmpScreenPos = new Vector3((Screen.width - screenPos.x), 0, 0);
-                
-                
+                if (mainCamera.transform.position.y < targetPos.y)
+                    tmpScreenPos = new Vector3((Screen.width - screenPos.x), Screen.height, 0);
+
             }
-
             else
             {
-                isTargetBehind = false;
                 if (!rect.Contains(screenPos))
                 {
                     isTargetVisible = false;
-
                 }
             }
             
-
         }
        
 
         tmpScreenPos.x = Mathf.Clamp(tmpScreenPos.x, arrowXBoundary, Screen.width - arrowXBoundary);
         tmpScreenPos.y = Mathf.Clamp(tmpScreenPos.y, arrowYBoundary, Screen.height - arrowYBoundary);
         
-
         pointerScreenTransform.position = tmpScreenPos;
 
         CalculateAngle(screenPos, tmpScreenPos);
@@ -167,17 +157,13 @@ public class TargetPointer : MonoBehaviour
         if (isTargetBehind)
         {
             angle += 180;
-            Debug.Log("+180");
         }
 
         if (!isTargetVisible)        
         {
             angle = 360 - angle;
-            Debug.Log("360 - angle");
-
         }
-
-
+        
     }
   
 
