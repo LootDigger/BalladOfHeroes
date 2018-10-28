@@ -11,20 +11,17 @@ public class TargetPointer : MonoBehaviour
     private float spriteWidth ;
     private float spriteHeight ;
     private float angle;
-    private float inversRotationValue;
-
-    private Vector3 pointerLeftRotation;
-    private Vector3 pointerRightRotation;
-    private Vector3 pointerUpRotation;
-
-
+    private float arrowXBoundary;
+    private float arrowYBoundary;
+    private float yPointerOffset;
+    private Rect rect;
     #endregion
 
 
 
     #region Serializable fields
 
-    [SerializeField]
+   [SerializeField]
     private Transform targetTransform;
 
     [SerializeField]
@@ -46,24 +43,21 @@ public class TargetPointer : MonoBehaviour
 
     public bool isTargetBehind { get; set; }
     public bool isTargetVisible { get; set; }
-
-
+    
     #endregion
+
 
     #region Unity lifecycle
 
     void Awake()
     {
-          pointerLeftRotation = new Vector3(0,0,-90f);
-          pointerRightRotation = new Vector3(0, 0, 90f);
-          pointerUpRotation = new Vector3(0, 0, 180f); ;
-
+        CalculateArrowBoundary();
+        yPointerOffset = 0.5f;
         isTargetBehind = false;
         isTargetVisible = false;
         Image image = pointerScreenTransform.GetComponent<Image>();
         spriteHeight = image.sprite.texture.height;
         spriteWidth = image.sprite.texture.width;
-        inversRotationValue = 0f;
     }
 
 
@@ -71,51 +65,61 @@ public class TargetPointer : MonoBehaviour
 
     void LateUpdate()
     {
-        Vector3 screenPos = mainCamera.WorldToScreenPoint(targetTransform.position);        
-        Rect rect = new Rect(0, 0, Screen.width, Screen.height);
-        Vector3 tmpScreenPos = screenPos;
+        Vector3 targetPos = targetTransform.position;
+        targetPos += new Vector3(0, yPointerOffset, 0);
 
+        Debug.Log(targetPos);
+
+
+        Vector3 screenPos = mainCamera.WorldToScreenPoint(targetPos);        
+        rect = new Rect(0, 0, Screen.width, Screen.height);
+        Vector3 tmpScreenPos = screenPos;
+        
 
 
         if (rect.Contains(screenPos) && !IsTargetBehind())
         {
             ChangeSprite(pointer);
-            pointerScreenTransform.position = tmpScreenPos;
-            inversRotationValue = 1f;
             isTargetVisible = true;
-
         }
         else
         {
+
             ChangeSprite(arrow);
 
             if (IsTargetBehind())
             {
-               
+                isTargetBehind = true;
+
+                
                 tmpScreenPos = new Vector3((Screen.width - screenPos.x), 0, 0);
+                
+                
             }
 
-            else 
-                if(!rect.Contains(screenPos))
+            else
             {
-                isTargetVisible = false;
+                isTargetBehind = false;
+                if (!rect.Contains(screenPos))
+                {
+                    isTargetVisible = false;
 
+                }
             }
             
 
         }
-        float sizeX = spriteWidth / 2;
-        float sizeY = spriteHeight / 2;
+       
 
-        tmpScreenPos.x = Mathf.Clamp(tmpScreenPos.x, sizeX, Screen.width - sizeX);
-        tmpScreenPos.y = Mathf.Clamp(tmpScreenPos.y, sizeY  , Screen.height - sizeY);
+        tmpScreenPos.x = Mathf.Clamp(tmpScreenPos.x, arrowXBoundary, Screen.width - arrowXBoundary);
+        tmpScreenPos.y = Mathf.Clamp(tmpScreenPos.y, arrowYBoundary, Screen.height - arrowYBoundary);
+        
 
         pointerScreenTransform.position = tmpScreenPos;
 
         CalculateAngle(screenPos, tmpScreenPos);
 
         pointerScreenTransform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        IsTargetForward();
     }
 
 
@@ -135,6 +139,7 @@ public class TargetPointer : MonoBehaviour
             isTargetBehind = true;
             return true;
         }
+
         isTargetBehind = false;
         return false;
 
@@ -144,21 +149,10 @@ public class TargetPointer : MonoBehaviour
     }
 
 
-
-    bool IsTargetForward()
+    void CalculateArrowBoundary()
     {
-        Vector3 playerDirection = mainCamera.transform.TransformDirection(Vector3.forward);
-        Vector3 vectorBetweenPlayerAndTarget = targetTransform.position - mainCamera.transform.position;
-        playerDirection.Normalize();
-        vectorBetweenPlayerAndTarget.Normalize();
-
-        //if (Vector3.Dot(playerDirection, vectorBetweenPlayerAndTarget) < 0)
-        //{
-        //    isTargetBehind = true;
-        //    return true;
-        //}
-        //isTargetBehind = false;
-        return false;
+        arrowXBoundary = Screen.width * 0.1f;
+        arrowYBoundary = Screen.height * 0.1f;
         
     }
 
@@ -173,17 +167,21 @@ public class TargetPointer : MonoBehaviour
         if (isTargetBehind)
         {
             angle += 180;
+            Debug.Log("+180");
         }
 
         if (!isTargetVisible)        
         {
             angle = 360 - angle;
+            Debug.Log("360 - angle");
+
         }
 
-            
+
     }
   
-    void ChangeSprite(Sprite sprite )
+
+    void ChangeSprite(Sprite sprite)
     {
         Image im = pointerScreenTransform.GetComponent<Image>();
 
@@ -191,12 +189,9 @@ public class TargetPointer : MonoBehaviour
         im.sprite = sprite;
 
     }
-
-
+    
     #endregion
 
 
-    #region Public methods
-
-    #endregion
+  
 }
