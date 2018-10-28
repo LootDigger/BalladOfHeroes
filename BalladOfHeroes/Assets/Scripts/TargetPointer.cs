@@ -7,21 +7,19 @@ public class TargetPointer : MonoBehaviour
 {
 
     #region Private fields
-
-    private float spriteWidth ;
-    private float spriteHeight ;
+       
     private float angle;
     private float arrowXBoundary;
     private float arrowYBoundary;
-    private float yPointerOffset;
+    private Vector3 yPointerOffsetVector;
     private Rect rect;
+
     #endregion
-
-
+    
 
     #region Serializable fields
 
-   [SerializeField]
+    [SerializeField]
     private Transform targetTransform;
 
     [SerializeField]
@@ -52,13 +50,9 @@ public class TargetPointer : MonoBehaviour
     void Awake()
     {
         CalculateArrowBoundary();
-        yPointerOffset = 1;
+        yPointerOffsetVector = new Vector3(0f,1f,0f);
         isTargetBehind = false;
         isTargetVisible = false;
-        Image image = pointerScreenTransform.GetComponent<Image>();
-        spriteHeight = image.sprite.texture.height;
-        spriteWidth = image.sprite.texture.width;
-        rect = new Rect(0, 0, Screen.width, Screen.height);
     }
 
 
@@ -66,14 +60,16 @@ public class TargetPointer : MonoBehaviour
 
     void LateUpdate()
     {
+        rect = new Rect(0, 0, Screen.width, Screen.height);
+
         Vector3 targetPos = targetTransform.position;
-        targetPos += new Vector3(0, yPointerOffset, 0);
+        targetPos += yPointerOffsetVector; // add small y offset for pointer
+       
         Vector3 screenPos = mainCamera.WorldToScreenPoint(targetPos);          
         Vector3 tmpScreenPos = screenPos;
-        
 
 
-        if (rect.Contains(screenPos) && !IsTargetBehind())
+        if (rect.Contains((screenPos - yPointerOffsetVector)) && !IsTargetBehind()) //we are looking at object
         {
             ChangeSprite(pointer);
             isTargetVisible = true;
@@ -82,16 +78,16 @@ public class TargetPointer : MonoBehaviour
         {
             ChangeSprite(arrow);
 
-            if (IsTargetBehind())
+            if (IsTargetBehind()) // our targer is behind
             {
-                if (mainCamera.transform.position.y > targetPos.y)
+                if (mainCamera.transform.position.y > targetPos.y) 
                     tmpScreenPos = new Vector3((Screen.width - screenPos.x),0, 0);
 
                 if (mainCamera.transform.position.y < targetPos.y)
                     tmpScreenPos = new Vector3((Screen.width - screenPos.x), Screen.height, 0);
 
             }
-            else
+            else // we are turned left or right, so we can't see target, but target is not behind us 
             {
                 if (!rect.Contains(screenPos))
                 {
@@ -102,14 +98,15 @@ public class TargetPointer : MonoBehaviour
         }
        
 
-        tmpScreenPos.x = Mathf.Clamp(tmpScreenPos.x, arrowXBoundary, Screen.width - arrowXBoundary);
+        tmpScreenPos.x = Mathf.Clamp(tmpScreenPos.x, arrowXBoundary, Screen.width - arrowXBoundary); //restrict position of our arrow 
         tmpScreenPos.y = Mathf.Clamp(tmpScreenPos.y, arrowYBoundary, Screen.height - arrowYBoundary);
         
-        pointerScreenTransform.position = tmpScreenPos;
+        pointerScreenTransform.position = tmpScreenPos; //update arrow position
 
-        CalculateAngle(screenPos, tmpScreenPos);
 
-        pointerScreenTransform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        angle = CalculateAngle(screenPos, tmpScreenPos); //calculate arrow angle 
+
+        pointerScreenTransform.rotation = Quaternion.AngleAxis(angle, Vector3.forward); //set angle for arrow sprite
     }
 
 
@@ -136,34 +133,39 @@ public class TargetPointer : MonoBehaviour
         
 
         
-    }
+    } // check if our target is behind us
 
 
     void CalculateArrowBoundary()
     {
         arrowXBoundary = Screen.width * 0.1f;
         arrowYBoundary = Screen.height * 0.1f;
-        
-    }
+       
+
+    } // calculate the 10% boundary position for Mathf.clamp
 
 
-    void CalculateAngle(Vector3 screenPos, Vector3 tmpScreenPos)
+    float CalculateAngle(Vector3 screenPos, Vector3 tmpScreenPos)
     {
         Vector3 rotationDirection = screenPos - tmpScreenPos;
         rotationDirection.Normalize();
-        angle = Mathf.Atan2(rotationDirection.x, rotationDirection.y);
-        angle *= Mathf.Rad2Deg;
+        float tmpAngle;
+        tmpAngle = Mathf.Atan2(rotationDirection.x, rotationDirection.y);
+        tmpAngle *= Mathf.Rad2Deg;
 
-        if (isTargetBehind)
+        if (isTargetBehind)       //some forced corrections of angle                 
+            tmpAngle -= 180f;
+
+
+        if (!isTargetVisible) //we turned left or right from target
         {
-            angle += 180;
+            tmpAngle *= -1f; //inverse rotation
         }
 
-        if (!isTargetVisible)        
-        {
-            angle = 360 - angle;
-        }
-        
+
+        if (tmpAngle >= 360f)
+            tmpAngle -= 360f;
+        return tmpAngle;
     }
   
 
@@ -174,10 +176,8 @@ public class TargetPointer : MonoBehaviour
         if(im.sprite != sprite)
         im.sprite = sprite;
 
-    }
+    } // Change sprite method
     
     #endregion
-
-
-  
+      
 }
