@@ -166,7 +166,7 @@ public class TargetPointer : MonoBehaviour
         if (tmpAngle >= 360f)
             tmpAngle -= 360f;
         return tmpAngle;
-    }
+    } // calculate angle for our arrow
   
 
     void ChangeSprite(Sprite sprite)
